@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 
 function SinglePlayer() {
+  // List of riddles
   const riddles = [
     {
       question: "I speak without a mouth and hear without ears. What am I?",
@@ -23,43 +24,50 @@ function SinglePlayer() {
   const [timeLeft, setTimeLeft] = useState(90);
   const [currentRiddle, setCurrentRiddle] = useState(null);
   const [anagramWord, setAnagramWord] = useState("");
+  const [shuffledWord, setShuffledWord] = useState("");
   const [anagramInput, setAnagramInput] = useState("");
   const [oddOptions, setOddOptions] = useState([]);
   const [message, setMessage] = useState("");
   const [gameOver, setGameOver] = useState(false);
 
-  // ⏱ Timer
+  // Timer
   useEffect(() => {
+    if (gameOver) return;
+
     if (timeLeft <= 0) {
-      setMessage("Time's up! You are eliminated.");
+      setMessage("⏰ Time's up! You are eliminated.");
       setGameOver(true);
       return;
     }
+
     const timer = setInterval(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, [timeLeft, gameOver]);
 
-  // 🎲 Start game
+  // Start Level 1
   useEffect(() => {
     if (level === 1) {
-      const random = riddles[Math.floor(Math.random() * riddles.length)];
-      setCurrentRiddle(random);
+      const randomRiddle = riddles[Math.floor(Math.random() * riddles.length)];
+      setCurrentRiddle(randomRiddle);
       setMessage("");
       setGameOver(false);
       setTimeLeft(90);
     }
   }, [level]);
 
-  // 🔀 Shuffle letters (used for anagram)
-  function shuffleWord(word) {
-    return word
-      .split("")
-      .sort(() => Math.random() - 0.5)
-      .join("");
-  }
+  // Shuffle function
+  const shuffleWord = (word) =>
+    word.split("").sort(() => Math.random() - 0.5).join("");
 
-  // ✅ Handle Level 1 answer
-  function handleRiddleAnswer(answer) {
+  // Shuffle anagram once when Level 2 starts
+  useEffect(() => {
+    if (level === 2 && anagramWord) {
+      setShuffledWord(shuffleWord(anagramWord));
+    }
+  }, [level, anagramWord]);
+
+  // Level 1 answer handler
+  const handleRiddleAnswer = (answer) => {
     if (answer === currentRiddle.answer) {
       setLevel(2);
       const synonym =
@@ -67,88 +75,110 @@ function SinglePlayer() {
           Math.floor(Math.random() * currentRiddle.synonyms.length)
         ];
       setAnagramWord(synonym);
+      setAnagramInput("");
       setTimeLeft(90);
       setMessage("");
     } else {
-      setMessage("Wrong answer! You are eliminated.");
+      setMessage("❌ Wrong answer! You are eliminated.");
       setGameOver(true);
     }
-  }
+  };
 
-  // ✅ Handle Level 2 answer
-  function handleAnagramSubmit(e) {
+  // Level 2 answer handler
+  const handleAnagramSubmit = (e) => {
     e.preventDefault();
-    if (anagramInput.toLowerCase() === anagramWord.toLowerCase()) {
+    if (anagramInput.trim().toLowerCase() === anagramWord.toLowerCase()) {
       setLevel(3);
+      // Generate odd-one-out options
       const options = [...currentRiddle.synonyms];
-      options.push("Banana"); // add an odd one out
-      options.sort(() => Math.random() - 0.5);
-      setOddOptions(options);
+      options.push("Banana"); // odd one out
+      setOddOptions(options.sort(() => Math.random() - 0.5));
       setTimeLeft(90);
       setMessage("");
     } else {
-      setMessage("Wrong answer! You are eliminated.");
+      setMessage("❌ Wrong answer! You are eliminated.");
       setGameOver(true);
     }
-  }
+  };
 
-  // ✅ Handle Level 3 answer
-  function handleOddOneOut(choice) {
+  // Level 3 answer handler
+  const handleOddOneOut = (choice) => {
     if (choice === "Banana") {
       setMessage("🎉 You win! Congratulations!");
       setGameOver(true);
     } else {
-      setMessage("Wrong answer! You are eliminated.");
+      setMessage("❌ Wrong answer! You are eliminated.");
       setGameOver(true);
     }
+  };
+
+  // Render
+  if (gameOver) {
+    return (
+      <div style={{ textAlign: "center", marginTop: "50px" }}>
+        <h2>Game Over!</h2>
+        <p>{message}</p>
+        <button onClick={() => window.location.reload()}>Play Again</button>
+      </div>
+    );
   }
 
-  // 🎨 Render UI
   return (
     <div style={{ textAlign: "center", marginTop: "50px" }}>
       <h2>Single Player Mode</h2>
       <p>⏱ Time Left: {timeLeft}s</p>
 
-      {!gameOver && level === 1 && currentRiddle && (
+      {level === 1 && currentRiddle && (
         <div>
-          <h3>{currentRiddle.question}</h3>
-          <div>
-            {["Echo", "Piano", "Footsteps"].map((choice, i) => (
-              <button key={i} onClick={() => handleRiddleAnswer(choice)}>
-                {choice}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {!gameOver && level === 2 && (
-        <div>
-          <h3>Solve the Anagram:</h3>
-          <p>{shuffleWord(anagramWord)}</p>
-          <form onSubmit={handleAnagramSubmit}>
-            <input
-              type="text"
-              value={anagramInput}
-              onChange={(e) => setAnagramInput(e.target.value)}
-            />
-            <button type="submit">Submit</button>
-          </form>
-        </div>
-      )}
-
-      {!gameOver && level === 3 && (
-        <div>
-          <h3>Select the odd one out:</h3>
-          {oddOptions.map((choice, i) => (
-            <button key={i} onClick={() => handleOddOneOut(choice)}>
-              {choice}
+          <h3>Level 1: Riddle</h3>
+          <p>{currentRiddle.question}</p>
+          {["Echo", "Piano", "Footsteps"].map((opt, i) => (
+            <button
+              key={i}
+              style={{ display: "block", margin: "10px auto" }}
+              onClick={() => handleRiddleAnswer(opt)}
+            >
+              {opt}
             </button>
           ))}
         </div>
       )}
 
-      {message && <h3>{message}</h3>}
+      {level === 2 && (
+        <div>
+          <h3>Level 2: Anagram</h3>
+          <p>Unscramble this word:</p>
+          <p>{shuffledWord}</p>
+          <form onSubmit={handleAnagramSubmit}>
+            <input
+              type="text"
+              value={anagramInput}
+              onChange={(e) => setAnagramInput(e.target.value)}
+              placeholder="Type your answer here"
+            />
+            <br />
+            <button type="submit" style={{ marginTop: "10px" }}>
+              Submit
+            </button>
+          </form>
+        </div>
+      )}
+
+      {level === 3 && (
+        <div>
+          <h3>Level 3: Odd One Out</h3>
+          <p>Select the odd one out (use Level 2 answer as a clue):</p>
+          {oddOptions.map((choice, i) => (
+            <button
+              key={i}
+              style={{ display: "block", margin: "10px auto" }}
+              onClick={() => handleOddOneOut(choice)}
+            >
+              {choice}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
