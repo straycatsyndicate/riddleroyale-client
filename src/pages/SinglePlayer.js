@@ -6,17 +6,17 @@ function SinglePlayer() {
     {
       question: "I speak without a mouth and hear without ears. What am I?",
       answer: "Echo",
-      synonyms: ["Sound", "Reverberation", "Reflection"],
+      synonyms: ["sound", "reverberation", "reflection"],
     },
     {
       question: "What has keys but can’t open locks?",
       answer: "Piano",
-      synonyms: ["Keyboard", "Organ", "Instrument"],
+      synonyms: ["keyboard", "organ", "instrument"],
     },
     {
       question: "The more of me you take, the more you leave behind. What am I?",
       answer: "Footsteps",
-      synonyms: ["Tracks", "Marks", "Imprints"],
+      synonyms: ["tracks", "marks", "imprints"],
     },
   ];
 
